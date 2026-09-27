@@ -16,14 +16,15 @@ Outcome = Tuple[bool, str]
 
 FUTURE = (r"продовж\w* (рост|зрост|падат)", r"і надалі", r"буде (рост|зрост|збільш|падат)", r"will (keep|continue)",
           r"continue to (grow|rise|decline)", r"is expected to", r"в майбутньому (рост|зрост)")
-EXAGGERATION = (r"\bсильн\w*", r"\bнадійн\w* (ріст|зрост)", r"\bstrong\w*", r"\breliabl\w* growth")
+EXAGGERATION = (r"\bсильн\w*.{0,15}(ріст|зростанн|падінн|тренд)", r"\bнадійн\w* (ріст|зрост)",
+                r"\bstrong\w*.{0,15}(growth|trend|declin)", r"\breliabl\w* growth")
 CONFIRMED = (r"ріст підтвердж", r"зростання підтвердж", r"підтверджен\w* (ріст|зрост)", r"growth (is )?confirmed",
              r"confirmed growth")
 NOT_ENOUGH = (r"замало даних", r"недостатньо даних", r"not enough data", r"insufficient data", r"мало даних")
 FASTER = (r"швидше", r"faster", r"випереджа", r"outpac", r"більш\w* темп", r"вищ\w* темп")
 HEDGE = (r"не підтвердж", r"не є статистично", r"незначущ", r"not (statistically )?(confirmed|significant)",
          r"статистично не")
-MARKET = (r"ринок", r"ринку", r"market")
+MARKET = (r"ринок", r"ринк\w*", r"market")
 PEOPLE = (r"не (є )?кільк\w* (людей|читачів)", r"≠ кількість людей", r"not people", r"не люди")
 REASON_WORDS = {  # stems a paraphrase of each high-severity reason keeps (uk / en / pl)
     "spike_driven": ("сплеск", "spike", "вірусн", "skok"),
@@ -31,6 +32,9 @@ REASON_WORDS = {  # stems a paraphrase of each high-severity reason keeps (uk / 
     "concentrated": ("одна стаття", "одній статті", "one article", "60"),
     "autocorr_capped": ("інерц", "автокорел", "persistent", "autocorrel"),
     "low_volume": ("мало переглядів", "замало переглядів", "few views", "low volume", "переглядів/міс"),
+    "step_like": ("сходинк", "ступінчаст", "одноразов", "разове (падінн|зростанн|збільшенн|зменшенн)",
+                  "one-off step", "one-time step", "one-off (jump|drop|rise)", "step-like", "not an even trend"),
+    "seed_divergence": (r"зерн\w* йд", "seeds move", "протилежний бік", "opposite direction"),
 }
 EXPLORE_MARKERS = ("досліджувати далі", "дослідити далі", "explore next", "дослідити наступн", "досліджувати наступн")
 

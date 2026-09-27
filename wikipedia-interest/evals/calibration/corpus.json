@@ -1,0 +1,389 @@
+{
+  "seed": 20260927,
+  "langs": [
+    "en",
+    "es",
+    "pl",
+    "uk",
+    "cs"
+  ],
+  "fields": [
+    "Arts",
+    "Philosophy and religion",
+    "Everyday life",
+    "Society and social sciences",
+    "Biology and health sciences",
+    "Physical sciences",
+    "Technology",
+    "Mathematics"
+  ],
+  "per_field": 2,
+  "extra": [
+    "intermittent fasting",
+    "astronomy",
+    "English as a second or foreign language",
+    "ketogenic diet"
+  ],
+  "topics": [
+    {
+      "id": "t01",
+      "qid": "Q202548",
+      "label": "Vertigo",
+      "field": "Arts",
+      "random": true,
+      "items": [
+        "Q202548",
+        "Q163038",
+        "Q223139",
+        "Q34414",
+        "Q110043",
+        "Q1509470",
+        "Q497311",
+        "Q501105",
+        "Q109564"
+      ]
+    },
+    {
+      "id": "t02",
+      "qid": "Q11989",
+      "label": "Symphony No. 9",
+      "field": "Arts",
+      "random": true,
+      "items": [
+        "Q11989",
+        "Q188709",
+        "Q157489",
+        "Q163493",
+        "Q231117",
+        "Q9734",
+        "Q210451",
+        "Q246433",
+        "Q11993"
+      ]
+    },
+    {
+      "id": "t03",
+      "qid": "Q238199",
+      "label": "ancestor worship",
+      "field": "Philosophy and religion",
+      "random": true,
+      "items": [
+        "Q238199",
+        "Q43004",
+        "Q9174",
+        "Q189819",
+        "Q386498",
+        "Q9581",
+        "Q748",
+        "Q756820",
+        "Q9163"
+      ]
+    },
+    {
+      "id": "t04",
+      "qid": "Q747802",
+      "label": "Mormonism",
+      "field": "Philosophy and religion",
+      "random": true,
+      "items": [
+        "Q747802",
+        "Q42504",
+        "Q459842",
+        "Q459864",
+        "Q5043",
+        "Q829",
+        "Q170585",
+        "Q23540",
+        "Q1845"
+      ]
+    },
+    {
+      "id": "t05",
+      "qid": "Q5372",
+      "label": "basketball",
+      "field": "Everyday life",
+      "random": true,
+      "items": [
+        "Q5372",
+        "Q46199",
+        "Q691875",
+        "Q155223",
+        "Q212413",
+        "Q193141",
+        "Q222052",
+        "Q26001",
+        "Q273199"
+      ]
+    },
+    {
+      "id": "t06",
+      "qid": "Q57216",
+      "label": "plate",
+      "field": "Everyday life",
+      "random": true,
+      "items": [
+        "Q57216",
+        "Q153988",
+        "Q45621",
+        "Q130693",
+        "Q11642",
+        "Q11469",
+        "Q11474",
+        "Q613972",
+        "Q81707"
+      ]
+    },
+    {
+      "id": "t07",
+      "qid": "Q13499",
+      "label": "debit card",
+      "field": "Society and social sciences",
+      "random": true,
+      "items": [
+        "Q13499",
+        "Q1436963",
+        "Q161380",
+        "Q81235",
+        "Q676459",
+        "Q328840",
+        "Q489921",
+        "Q334501",
+        "Q41349"
+      ]
+    },
+    {
+      "id": "t08",
+      "qid": "Q506858",
+      "label": "photojournalism",
+      "field": "Society and social sciences",
+      "random": true,
+      "items": [
+        "Q506858",
+        "Q11633",
+        "Q11030",
+        "Q1851397",
+        "Q33231",
+        "Q372899",
+        "Q463198",
+        "Q551947",
+        "Q254106"
+      ]
+    },
+    {
+      "id": "t09",
+      "qid": "Q202387",
+      "label": "post-traumatic stress disorder",
+      "field": "Biology and health sciences",
+      "random": true,
+      "items": [
+        "Q202387",
+        "Q654426",
+        "Q424221",
+        "Q1147152",
+        "Q12135",
+        "Q407617",
+        "Q544006",
+        "Q183257",
+        "Q192692"
+      ]
+    },
+    {
+      "id": "t10",
+      "qid": "Q156529",
+      "label": "Bromeliaceae",
+      "field": "Biology and health sciences",
+      "random": true,
+      "items": [
+        "Q156529",
+        "Q132933",
+        "Q134341",
+        "Q137318",
+        "Q147316",
+        "Q1493",
+        "Q157270",
+        "Q188238",
+        "Q78961"
+      ]
+    },
+    {
+      "id": "t11",
+      "qid": "Q182468",
+      "label": "hydrography",
+      "field": "Physical sciences",
+      "random": true,
+      "items": [
+        "Q182468",
+        "Q42250",
+        "Q43518",
+        "Q1071",
+        "Q233611",
+        "Q131089",
+        "Q52107",
+        "Q52109",
+        "Q52139"
+      ]
+    },
+    {
+      "id": "t12",
+      "qid": "Q47574",
+      "label": "unit of measurement",
+      "field": "Physical sciences",
+      "random": true,
+      "items": [
+        "Q47574",
+        "Q12457",
+        "Q11573",
+        "Q107715",
+        "Q11570",
+        "Q12438",
+        "Q208469",
+        "Q232405",
+        "Q25272"
+      ]
+    },
+    {
+      "id": "t13",
+      "qid": "Q189859",
+      "label": "steam turbine",
+      "field": "Technology",
+      "random": true,
+      "items": [
+        "Q189859",
+        "Q130760",
+        "Q193470",
+        "Q200297",
+        "Q12760",
+        "Q215612",
+        "Q131502",
+        "Q900729",
+        "Q161064"
+      ]
+    },
+    {
+      "id": "t14",
+      "qid": "Q178794",
+      "label": "watch",
+      "field": "Technology",
+      "random": true,
+      "items": [
+        "Q178794",
+        "Q257916",
+        "Q193150",
+        "Q322601",
+        "Q5362345",
+        "Q376",
+        "Q1339889",
+        "Q62288",
+        "Q361"
+      ]
+    },
+    {
+      "id": "t15",
+      "qid": "Q126017",
+      "label": "distance",
+      "field": "Mathematics",
+      "random": true,
+      "items": [
+        "Q126017",
+        "Q180953",
+        "Q36253",
+        "Q208216",
+        "Q37105",
+        "Q17295",
+        "Q272172",
+        "Q193139",
+        "Q395"
+      ]
+    },
+    {
+      "id": "t16",
+      "qid": "Q11216",
+      "label": "numerical analysis",
+      "field": "Mathematics",
+      "random": true,
+      "items": [
+        "Q11216",
+        "Q753445",
+        "Q1430640",
+        "Q220184",
+        "Q141495",
+        "Q7754",
+        "Q395",
+        "Q374195",
+        "Q11214"
+      ]
+    },
+    {
+      "id": "t17",
+      "qid": "Q1666254",
+      "label": "intermittent fasting",
+      "field": "task-like",
+      "random": false,
+      "items": [
+        "Q1666254",
+        "Q12174",
+        "Q44602",
+        "Q657193",
+        "Q718113",
+        "Q1570280",
+        "Q1053470",
+        "Q131191",
+        "Q131276"
+      ]
+    },
+    {
+      "id": "t18",
+      "qid": "Q333",
+      "label": "astronomy",
+      "field": "task-like",
+      "random": false,
+      "items": [
+        "Q333",
+        "Q37547",
+        "Q818557",
+        "Q1",
+        "Q6999",
+        "Q502038",
+        "Q523",
+        "Q181505",
+        "Q184274"
+      ]
+    },
+    {
+      "id": "t19",
+      "qid": "Q130192",
+      "label": "English as a second or foreign language",
+      "field": "task-like",
+      "random": false,
+      "items": [
+        "Q130192",
+        "Q184377",
+        "Q44679",
+        "Q102532",
+        "Q131276",
+        "Q202961",
+        "Q21204",
+        "Q221385",
+        "Q2545446"
+      ]
+    },
+    {
+      "id": "t20",
+      "qid": "Q1070684",
+      "label": "ketogenic diet",
+      "field": "task-like",
+      "random": false,
+      "items": [
+        "Q1070684",
+        "Q1123139",
+        "Q41571",
+        "Q1570280",
+        "Q11358",
+        "Q2632776",
+        "Q25670",
+        "Q47564",
+        "Q49546"
+      ]
+    }
+  ]
+}

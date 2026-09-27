@@ -115,7 +115,9 @@ and replayed without the network.
 | `evals/` | agent evals (scenarios, runners, judge checklist) and threshold calibration |
 
 The skill itself (`SKILL.md`, `scripts/`, `references/`) is about 1.5 MB; most of the directory is
-recorded API fixtures used by the tests.
+recorded API fixtures used by the tests. The calibration corpus (`evals/calibration/data/`, level
+0a, 20 topics × 5 languages) is about 500 KB; recorded eval fixtures (`evals/corpus/`) are about
+9 MB.
 
 ## Roadmap
 

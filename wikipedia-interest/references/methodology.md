@@ -174,6 +174,53 @@ down ≤ −`FLAT_PCT`, flat between), never the p-value:
 - One topic may be split into a different number of articles in different editions, so
   `level_ppm` is only partly comparable between languages.
 
+## Calibration status
+
+Level 0a (calibration §5): a reduced corpus of 20 topics × 5 languages (`en, es, pl, uk, cs`),
+full history from 2015-07, recorded 2026-09-28. Every topic turned out "large" (≥ 1,000 views/mo
+on the primary basket); the corpus has no small series to report separately. Results are
+preliminary — no held-out part yet (level 0b).
+
+**R1** (starting method only, window ending 2026-08, 1,000 series, 10 shuffles/pair):
+
+| Criterion | Value | Gate | Verdict |
+|---|---|---|---|
+| False `growing`/`declining` without a trend | 0.069 | ≤ 0.10 | pass |
+| Power for +20 %/yr | 0.812 | ≥ 0.70 | pass |
+| Step gives a trend with `high` confidence | 0.361 | ≤ 0.10 | **fail** |
+| False `stable` at +10 %/yr | 0.001 | ≤ 0.10 | pass |
+| `autocorr_capped` on real series | 0.15 | ≤ 0.05 | **fail** |
+| Test / CI agreement | 1.0 | — | — |
+
+Per §2.5, the two failing criteria are recorded as known limitations of the starting method
+rather than blocking level 0a: a step inside the window too easily earns `high` confidence
+instead of just `step_like`, and the autocorrelation correction hits its ceiling more often than
+the 5 % target on real series. Both are candidates for the alternatives compared at level 0b.
+
+**R12** (cold cache, 3 task examples): all 3 pass — 1 call each, ≤ 60 s, 0 `429` answers. The
+stricter `one_call` criterion also holds for all 3 (§3.5 keeps the `≤ 2 calls / ≤ 100 s` gate as
+the one that matters).
+
+**R22** (task examples, gates §5): `example_1` 100 % (5/5), `example_2` 100 % (5/5), `partial`
+100 % (5/5) — all above the ≥ 80 % / ≥ 90 % gates. Two methodology notes:
+
+- Run manually through an Agent-tool call (model Haiku 4.5) standing in for the runner, and this
+  session's own model standing in for the judge, instead of two separate `claude -p` subprocesses
+  as `evals/run.py` calls for — the API account used for CLI subprocesses had no credit balance
+  left. The harness itself (`evals/run.py`, `ClaudeCodeRunner`) is unchanged and should be used
+  once that account has credit again; this run's numbers are a manual stand-in, not a harness run.
+- Running several repeats of the *same* scenario in parallel corrupts its shared corpus fixture
+  (`evals/corpus/<id>/records.jsonl.gz`) under concurrent `replay-or-record` writes; several runs
+  were lost this way (`example_2` runs 2–3, `partial` runs 3–5) and had to be redone strictly one
+  at a time. `evals/run.py` already runs scenarios sequentially, so this only bit the manual stand-in.
+
+Fixed along the way, in `evals/wteval/checks.py` (real gaps found by this run, not scenario-specific):
+`REASON_WORDS` had no entry for `step_like` or `seed_divergence`, so `high_reasons_mentioned` could
+not recognise a correct paraphrase such as "one-off drop" for a step; `MARKET`'s Ukrainian word for
+"market" matched its nominative and genitive forms but not the instrumental case (a fleeting-vowel
+form); `EXAGGERATION`'s Ukrainian stem for "strongly" fired on any use of the word (e.g. "strongly
+depends on one article"), not only "strong growth".
+
 ## Thresholds
 
 | Name | Value | Meaning |

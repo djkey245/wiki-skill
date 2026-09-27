@@ -1,0 +1,78 @@
+{
+  "examples": {
+    "example_1": {
+      "calls": [
+        {
+          "argv": "quick",
+          "seconds": 41.2,
+          "partial": false,
+          "network": 75,
+          "throttled": 0,
+          "ok": true,
+          "code": null
+        }
+      ],
+      "n_calls": 1,
+      "max_call_seconds": 41.2,
+      "network": 75,
+      "throttled": 0,
+      "finished": true
+    },
+    "example_2": {
+      "calls": [
+        {
+          "argv": "quick",
+          "seconds": 60.2,
+          "partial": false,
+          "network": 106,
+          "throttled": 0,
+          "ok": true,
+          "code": null
+        }
+      ],
+      "n_calls": 1,
+      "max_call_seconds": 60.2,
+      "network": 106,
+      "throttled": 0,
+      "finished": true
+    },
+    "example_3": {
+      "calls": [
+        {
+          "argv": "quick",
+          "seconds": 3.2,
+          "partial": false,
+          "network": null,
+          "throttled": 0,
+          "ok": true,
+          "code": "ambiguous_topic"
+        }
+      ],
+      "n_calls": 1,
+      "max_call_seconds": 3.2,
+      "network": 0,
+      "throttled": 0,
+      "finished": true
+    }
+  },
+  "verdicts": {
+    "example_1": {
+      "calls": true,
+      "seconds": true,
+      "no_429": true,
+      "one_call": true
+    },
+    "example_2": {
+      "calls": true,
+      "seconds": true,
+      "no_429": true,
+      "one_call": true
+    },
+    "example_3": {
+      "calls": true,
+      "seconds": true,
+      "no_429": true,
+      "one_call": true
+    }
+  }
+}
