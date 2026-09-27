@@ -1,0 +1,34 @@
+{
+  "id": "new_session_ls",
+  "title": "Continue earlier work in a new session",
+  "setup": [
+    [
+      "quick",
+      "астрономія",
+      "--lang",
+      "uk",
+      "--langs",
+      "pl,cs",
+      "--display-lang",
+      "uk"
+    ]
+  ],
+  "steps": [
+    {
+      "user": "Відкрий наш попередній аналіз про астрономію й додай до нього угорську мову.",
+      "checks": [
+        {
+          "check": "commands",
+          "expect": [
+            "wikitrends\\.py\\s+ls",
+            "spec\\s+edit\\s+.*--add-lang\\s+hu",
+            "wikitrends\\.py\\s+analyze"
+          ],
+          "forbid": [
+            "wikitrends\\.py\\s+quick"
+          ]
+        }
+      ]
+    }
+  ]
+}

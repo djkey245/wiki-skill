@@ -1,0 +1,14 @@
+{
+  "id": "trigger_uk",
+  "title": "The skill triggers on a Ukrainian question",
+  "steps": [
+    {
+      "user": "Чи зростає інтерес до астрономії в україномовній Вікіпедії?",
+      "checks": [
+        {
+          "check": "skill_used"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "id": "short_period",
+  "title": "A period under 12 months",
+  "steps": [
+    {
+      "user": "Як змінився інтерес до астрономії в польській Вікіпедії за останні пів року?",
+      "checks": [
+        {
+          "check": "no_manual_edit"
+        }
+      ],
+      "answer_checks": false
+    }
+  ]
+}

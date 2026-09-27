@@ -1,0 +1,18 @@
+{
+  "id": "two_topics",
+  "title": "Compare two topics",
+  "steps": [
+    {
+      "user": "Порівняй інтерес до астрономії та біології в польській Вікіпедії.",
+      "checks": [
+        {
+          "check": "commands",
+          "expect": [
+            "(suggest\\s+.*--spec|spec\\s+edit\\s+.*--add-topic|suggest)",
+            "wikitrends\\.py\\s+analyze"
+          ]
+        }
+      ]
+    }
+  ]
+}

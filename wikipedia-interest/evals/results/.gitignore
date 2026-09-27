@@ -1,0 +1,2 @@
+# Full records with transcripts are large: keep only the Markdown tables in git
+*.json

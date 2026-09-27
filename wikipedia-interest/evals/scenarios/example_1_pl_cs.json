@@ -1,0 +1,29 @@
+{
+  "id": "example_1_pl_cs",
+  "title": "Task example 1: compare two languages",
+  "example": true,
+  "openrouter": true,
+  "steps": [
+    {
+      "user": "Порівняй, як змінювався інтерес до астрономії в польській і чеській Вікіпедії за останні два роки. Де він росте швидше?",
+      "checks": [
+        {
+          "check": "skill_used"
+        },
+        {
+          "check": "commands",
+          "expect": [
+            "wikitrends\\.py\\s+quick.*--langs\\s+(pl,cs|cs,pl)"
+          ]
+        },
+        {
+          "check": "answer_language",
+          "lang": "uk"
+        },
+        {
+          "check": "limits_mentioned"
+        }
+      ]
+    }
+  ]
+}

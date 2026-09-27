@@ -1,0 +1,17 @@
+{
+  "id": "unknown_lang",
+  "title": "An unknown language code",
+  "steps": [
+    {
+      "user": "Порівняй інтерес до астрономії у Вікіпедіях pl і cz.",
+      "checks": [
+        {
+          "check": "commands",
+          "expect": [
+            "wikitrends\\.py\\s+quick.*--langs\\s+(pl,cs|cs,pl)"
+          ]
+        }
+      ]
+    }
+  ]
+}

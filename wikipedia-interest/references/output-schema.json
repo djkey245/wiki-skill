@@ -1,0 +1,225 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/djkey245/wiki-skill/wikipedia-interest/references/output-schema.json",
+  "title": "wikitrends.py output",
+  "description": "stdout of every command is one JSON object: an error, a needs_user stop, a partial result or the command's result. result.json is described by $defs/result. Slices 1-2.",
+  "type": "object",
+  "required": ["ok", "schema_version"],
+  "properties": {
+    "ok": {"type": "boolean"},
+    "schema_version": {"const": 1},
+    "warnings": {"type": "array", "items": {"$ref": "#/$defs/warning"}}
+  },
+  "$defs": {
+    "error": {
+      "type": "object",
+      "required": ["ok", "code", "message", "schema_version"],
+      "properties": {
+        "ok": {"const": false},
+        "code": {"enum": ["invalid_arguments", "langs_required", "display_lang_required", "unknown_lang", "period_too_short",
+                          "end_not_available", "topic_required", "limits_exceeded", "budget_exceeded", "no_data",
+                          "network_blocked", "network_unavailable", "tls_certificates_missing", "network_error",
+                          "report_deps_missing", "workdir_not_writable", "internal_error"]},
+        "message": {"type": "string"},
+        "hint": {"type": "string"}
+      }
+    },
+    "needs_user": {
+      "type": "object",
+      "required": ["ok", "status", "code", "message"],
+      "properties": {
+        "ok": {"const": true},
+        "status": {"const": "needs_user"},
+        "code": {"enum": ["ambiguous_topic", "existing_spec"]},
+        "candidates": {"type": "array", "items": {
+          "type": "object", "required": ["qid", "label"],
+          "properties": {"qid": {"$ref": "#/$defs/qid"}, "label": {"type": "string"}, "description": {"type": ["string", "null"]}}
+        }}
+      }
+    },
+    "partial": {
+      "type": "object",
+      "required": ["ok", "partial", "message", "next_steps"],
+      "properties": {
+        "ok": {"const": true},
+        "partial": {"const": true},
+        "spec": {"type": "string"},
+        "progress": {"type": "object", "required": ["langs_done", "langs_total"]},
+        "next_steps": {"type": "array", "minItems": 1, "items": {"type": "string"}}
+      }
+    },
+    "warning": {
+      "type": "object",
+      "required": ["code", "message"],
+      "properties": {
+        "code": {"enum": ["workdir_fallback", "start_clipped", "data_revised", "fetch_failed", "newer_data_available"]},
+        "message": {"type": "string"}
+      }
+    },
+    "qid": {"type": "string", "pattern": "^Q[1-9][0-9]*$"},
+    "month": {"type": "string", "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"},
+    "group": {"enum": ["promising", "emerging", "steady", "weakening", "no_clear_trend", "insufficient_data"]},
+    "quadrant": {"enum": ["big_growing", "growing_niche", "unconfirmed", "big_stable", "small_stable", "no_trend",
+                          "weakening", "insufficient", null]},
+    "confidence": {"enum": ["high", "medium", "low", null]},
+    "criterion_status": {"enum": ["met", "not_met", "unconfirmed"]},
+    "reason": {
+      "type": "object",
+      "required": ["code", "severity", "text"],
+      "properties": {
+        "code": {"enum": ["not_significant", "low_volume", "step_like", "spike_driven", "concentrated", "unstable_basket",
+                          "autocorr_capped", "seed_divergence", "data_break", "data_revised", "trend_reversal",
+                          "recent_only", "short_window", "short_history", "thin_basket", "no_common_basket",
+                          "single_article", "redirect_heavy", "metric_disagreement", "small_effect", "project_trend"]},
+        "severity": {"enum": ["blocking", "high", "medium", "low", "info"]},
+        "text": {"type": "string", "minLength": 1},
+        "detail": {"type": "object"}
+      }
+    },
+    "ci": {"type": ["array", "null"], "items": {"type": "number"}, "minItems": 2, "maxItems": 2},
+    "cell": {
+      "description": "A topic x language cell of result.json",
+      "type": "object",
+      "required": ["lang", "status", "group", "direction", "confidence", "reasons", "fmt", "criteria", "criteria_met",
+                   "size_big", "quadrant"],
+      "properties": {
+        "lang": {"type": "string"},
+        "status": {"enum": ["ok", "failed", "no_articles"]},
+        "basket": {"enum": ["common", "local"]},
+        "n_articles": {"type": "integer", "minimum": 1},
+        "direction": {"enum": ["growing", "stable", "small_effect", "declining", "unclear", null]},
+        "confidence": {"$ref": "#/$defs/confidence"},
+        "category": {"enum": ["up", "down", "flat", null]},
+        "group": {"$ref": "#/$defs/group"},
+        "growth_pct_yr": {"type": ["number", "null"]},
+        "growth_ci": {"$ref": "#/$defs/ci"},
+        "p": {"type": ["number", "null"]},
+        "raw_growth_pct_yr": {"type": ["number", "null"]},
+        "raw_growth_ci": {"$ref": "#/$defs/ci"},
+        "level_ppm": {"type": ["number", "null"]},
+        "monthly_views": {"type": "number"},
+        "primary_monthly_views": {"type": "number"},
+        "recent_yoy_pct": {"type": ["number", "null"]},
+        "redirect_share": {"type": "number"},
+        "project_trend_pct_yr": {"type": ["number", "null"]},
+        "fmt": {"type": "object", "properties": {
+          "growth": {"type": ["string", "null"]}, "ci": {"type": ["string", "null"]}, "raw_growth": {"type": ["string", "null"]},
+          "raw_ci": {"type": ["string", "null"]},
+          "level_ppm": {"type": ["string", "null"]}, "monthly_views": {"type": ["string", "null"]}}},
+        "reasons": {"type": "array", "items": {"$ref": "#/$defs/reason"}},
+        "seed_divergence": {"enum": ["agrees", "diverges", "not_checked"]},
+        "breaks": {"type": "array", "items": {"type": "object", "required": ["id", "month", "status"], "properties": {
+          "month": {"$ref": "#/$defs/month"}, "status": {"enum": ["significant", "not_significant", "not_checked"]},
+          "shift": {"type": "number"}, "typical": {"type": "number"}}}},
+        "criteria": {"type": "object", "additionalProperties": {"$ref": "#/$defs/criterion_status"}},
+        "criteria_met": {"type": ["boolean", "null"]},
+        "size_big": {"type": ["boolean", "null"]},
+        "quadrant": {"$ref": "#/$defs/quadrant"},
+        "contributors": {"type": "array", "items": {"type": "object", "required": ["qid", "label", "share"]}},
+        "series": {"type": "object", "required": ["index", "share_ppm", "views"]}
+      }
+    },
+    "pair": {
+      "type": "object",
+      "required": ["a", "b", "diff_pct_yr", "ci", "p", "p_adj", "significant", "fmt", "shown", "text"],
+      "properties": {
+        "a": {"type": "string"}, "b": {"type": "string"},
+        "diff_pct_yr": {"type": "number"}, "ci": {"$ref": "#/$defs/ci"}, "p": {"type": "number"}, "p_adj": {"type": "number"},
+        "significant": {"type": "boolean"}, "reason": {"const": "difference_not_significant"},
+        "shown": {"type": "boolean"}, "text": {"type": "string", "minLength": 1}
+      }
+    },
+    "recommendations": {
+      "type": ["object", "null"],
+      "required": ["explore", "postpone", "rest", "none"],
+      "properties": {
+        "explore": {"type": "array", "maxItems": 3, "items": {"type": "object", "required": ["key", "text"]}},
+        "postpone": {"type": "array", "items": {"type": "object", "required": ["key", "text"]}},
+        "rest": {"type": "object", "required": ["keys", "text"]},
+        "none": {"type": ["string", "null"]}
+      }
+    },
+    "labelled": {"type": "object", "required": ["qid", "label"], "properties": {"qid": {"$ref": "#/$defs/qid"}, "label": {"type": "string"}}},
+    "topic": {
+      "type": "object",
+      "required": ["id", "label", "headline", "seeds", "items", "common", "excluded", "cells", "matrix", "ranking", "pairs",
+                   "pairs_skipped", "recommendations"],
+      "properties": {
+        "id": {"type": "string"}, "label": {"type": "string"}, "headline": {"type": "string", "minLength": 1},
+        "seeds": {"type": "array", "items": {"$ref": "#/$defs/labelled"}},
+        "items": {"type": "array", "items": {"$ref": "#/$defs/labelled"}},
+        "common": {"type": "array", "items": {"$ref": "#/$defs/qid"}},
+        "excluded": {"type": "array", "items": {"type": "object", "required": ["qid", "label", "lang", "code"]}},
+        "cells": {"type": "array", "items": {"$ref": "#/$defs/cell"}},
+        "matrix": {"type": "boolean"},
+        "ranking": {"type": "array", "items": {"type": "string"}},
+        "pairs": {"type": "array", "items": {"$ref": "#/$defs/pair"}},
+        "pairs_skipped": {"enum": ["no_common_basket", null]},
+        "recommendations": {"$ref": "#/$defs/recommendations"}
+      }
+    },
+    "change": {"type": "object", "required": ["kind"], "properties": {
+      "kind": {"enum": ["period", "langs", "topic_added", "topic_removed", "basket", "common_narrowed", "group", "direction",
+                        "confidence", "data_revised"]}}},
+    "result": {
+      "description": "results/<timestamp>.json and its copy result.json",
+      "type": "object",
+      "required": ["spec", "result", "display_lang", "text_lang", "period", "metric", "criteria", "langs", "topics", "by_lang",
+                   "latest_month", "answer_md_full", "changes", "warnings", "requests"],
+      "properties": {
+        "spec": {"type": "string"}, "result": {"type": "string"},
+        "display_lang": {"type": "string"}, "text_lang": {"enum": ["uk", "en"]},
+        "period": {"type": "object", "required": ["start", "end", "months"], "properties": {
+          "start": {"$ref": "#/$defs/month"}, "end": {"$ref": "#/$defs/month"},
+          "months": {"type": "array", "items": {"$ref": "#/$defs/month"}}}},
+        "latest_month": {"$ref": "#/$defs/month"},
+        "metric": {"enum": ["share", "views"]},
+        "criteria": {"type": ["object", "null"]},
+        "langs": {"type": "array", "items": {"type": "object", "required": ["lang", "status"]}},
+        "topics": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/topic"}},
+        "by_lang": {"type": "array", "items": {"type": "object", "required": ["lang", "ranking", "matrix", "quadrants", "pairs", "recommendations"],
+                                               "properties": {"pairs": {"type": "array", "items": {"$ref": "#/$defs/pair"}},
+                                                              "recommendations": {"$ref": "#/$defs/recommendations"}}}},
+        "answer_md_full": {"type": "string", "minLength": 1},
+        "changes": {"type": "array", "items": {"$ref": "#/$defs/change"}},
+        "warnings": {"type": "array", "items": {"$ref": "#/$defs/warning"}},
+        "requests": {"type": "object", "required": ["network"]}
+      }
+    },
+    "report_stdout": {
+      "description": "stdout of report.py",
+      "type": "object",
+      "required": ["ok", "schema_version", "out", "files", "text_lang"],
+      "properties": {
+        "ok": {"const": true},
+        "out": {"type": "string"},
+        "text_lang": {"enum": ["uk", "en"]},
+        "files": {"type": "object", "minProperties": 1, "additionalProperties": false, "properties": {
+          "pdf": {"type": "string"}, "md": {"type": "string"}, "png": {"type": "array", "items": {"type": "string"}}}}
+      }
+    },
+    "analyze_stdout": {
+      "description": "stdout of analyze and quick; quick adds `basket`",
+      "type": "object",
+      "required": ["ok", "schema_version", "spec", "result", "text_lang", "period", "topics", "answer_md", "changes", "requests",
+                   "next_steps"],
+      "properties": {
+        "ok": {"const": true},
+        "spec": {"type": "string"}, "result": {"type": "string"}, "text_lang": {"enum": ["uk", "en"]},
+        "period": {"type": "object", "required": ["start", "end"]},
+        "topics": {"type": "array", "items": {
+          "type": "object", "required": ["id", "label", "headline", "cells"],
+          "properties": {
+            "groups": {"type": "object", "additionalProperties": {"type": "integer"}},
+            "cells": {"type": "array", "items": {
+              "type": "object", "required": ["lang", "status", "group", "confidence", "growth", "ci", "criteria_met", "reasons"],
+              "properties": {"group": {"$ref": "#/$defs/group"}, "confidence": {"$ref": "#/$defs/confidence"},
+                             "reasons": {"type": "array", "items": {"$ref": "#/$defs/reason"}}}}}}}},
+        "answer_md": {"type": "string", "minLength": 1},
+        "changes": {"type": "array", "items": {"$ref": "#/$defs/change"}},
+        "basket": {"type": "array", "items": {"$ref": "#/$defs/labelled"}},
+        "next_steps": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

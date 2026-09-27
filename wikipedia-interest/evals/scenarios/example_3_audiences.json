@@ -1,0 +1,51 @@
+{
+  "id": "example_3_audiences",
+  "title": "Task example 3: which audiences to explore next, then a PDF",
+  "example": true,
+  "openrouter": true,
+  "steps": [
+    {
+      "user": "Ми готуємо онлайн-курс з астрономії. Які аудиторії у вибраних нами мовних розділах Вікіпедії варто дослідити наступними й чому?",
+      "checks": [
+        {
+          "check": "asked"
+        }
+      ],
+      "stop_on_fail": true,
+      "answer_checks": false
+    },
+    {
+      "user": "Польська, чеська, словацька, угорська і румунська.",
+      "checks": [
+        {
+          "check": "commands",
+          "expect": [
+            "wikitrends\\.py\\s+quick.*--langs\\s+\\S*(pl|cs|sk|hu|ro)"
+          ]
+        },
+        {
+          "check": "recommendations_match"
+        },
+        {
+          "check": "limits_mentioned"
+        }
+      ]
+    },
+    {
+      "user": "Зроби, будь ласка, PDF-звіт.",
+      "checks": [
+        {
+          "check": "commands",
+          "expect": [
+            "report\\.py"
+          ]
+        },
+        {
+          "check": "report_via_script",
+          "required": true
+        }
+      ],
+      "answer_checks": false
+    }
+  ]
+}

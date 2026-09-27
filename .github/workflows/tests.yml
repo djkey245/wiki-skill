@@ -1,0 +1,32 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  core:
+    name: core (Python ${{ matrix.python }}, no dev deps)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.9", "3.12"]
+    defaults:
+      run:
+        working-directory: wikipedia-interest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv run --python ${{ matrix.python }} --no-dev --with pytest pytest -v
+
+  full:
+    name: full (dev deps, cross-checks)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: wikipedia-interest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --dev --locked
+      - run: uv run pytest -v

@@ -1,0 +1,14 @@
+{
+  "id": "not_significant",
+  "title": "A question inviting an unfounded comparison",
+  "steps": [
+    {
+      "user": "Де інтерес до астрономії росте швидше — у польській, чеській чи словацькій Вікіпедії?",
+      "checks": [
+        {
+          "check": "no_unfounded_comparison"
+        }
+      ]
+    }
+  ]
+}

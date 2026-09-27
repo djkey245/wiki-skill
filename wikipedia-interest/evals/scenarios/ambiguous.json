@@ -1,0 +1,30 @@
+{
+  "id": "ambiguous",
+  "title": "An ambiguous topic makes the agent ask",
+  "steps": [
+    {
+      "user": "Як змінюється інтерес до Меркурія в українській і польській Вікіпедії?",
+      "checks": [
+        {
+          "check": "asked",
+          "before": [
+            "wikitrends\\.py\\s+analyze"
+          ]
+        }
+      ],
+      "stop_on_fail": true,
+      "answer_checks": false
+    },
+    {
+      "user": "Про планету.",
+      "checks": [
+        {
+          "check": "commands",
+          "expect": [
+            "wikitrends\\.py\\s+quick.*--seed\\s+Q\\d+|wikitrends\\.py\\s+analyze"
+          ]
+        }
+      ]
+    }
+  ]
+}

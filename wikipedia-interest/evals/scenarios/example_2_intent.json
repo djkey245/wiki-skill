@@ -1,0 +1,27 @@
+{
+  "id": "example_2_intent",
+  "title": "Task example 2: an intent topic needs seeds",
+  "example": true,
+  "openrouter": true,
+  "steps": [
+    {
+      "user": "Чи зростає інтерес до вивчення англійської мови в українській, польській і чеській Вікіпедії?",
+      "checks": [
+        {
+          "check": "commands",
+          "expect": [
+            "wikitrends\\.py\\s+find",
+            "wikitrends\\.py\\s+quick.*--seed\\s+Q\\d+"
+          ]
+        },
+        {
+          "check": "answer_language",
+          "lang": "uk"
+        },
+        {
+          "check": "limits_mentioned"
+        }
+      ]
+    }
+  ]
+}

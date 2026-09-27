@@ -1,0 +1,23 @@
+{
+  "id": "dates",
+  "title": "Specific dates use --start/--end",
+  "steps": [
+    {
+      "user": "Як змінювався інтерес до астрономії в польській Вікіпедії з 2020 року?",
+      "checks": [
+        {
+          "check": "commands",
+          "expect": [
+            "--start\\s+2020-01"
+          ],
+          "forbid": [
+            "--period"
+          ]
+        },
+        {
+          "check": "no_manual_edit"
+        }
+      ]
+    }
+  ]
+}

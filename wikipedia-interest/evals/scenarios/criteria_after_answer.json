@@ -1,0 +1,24 @@
+{
+  "id": "criteria_after_answer",
+  "title": "User criteria after the first answer",
+  "steps": [
+    {
+      "user": "Як змінюється інтерес до астрономії в українській, польській і чеській Вікіпедії?"
+    },
+    {
+      "user": "Нас цікавлять лише теми від 50 тисяч переглядів на місяць і з ростом від 15 % на рік. Що підходить?",
+      "checks": [
+        {
+          "check": "commands",
+          "expect": [
+            "spec\\s+edit\\s+.*--criteria\\s+\\S*min_monthly_views=50000",
+            "wikitrends\\.py\\s+analyze"
+          ]
+        },
+        {
+          "check": "limits_mentioned"
+        }
+      ]
+    }
+  ]
+}

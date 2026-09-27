@@ -1,0 +1,16 @@
+{
+  "id": "trigger_irrelevant",
+  "title": "An unrelated request does not load the skill",
+  "steps": [
+    {
+      "user": "Напиши функцію на Python, яка сортує список рядків за довжиною.",
+      "checks": [
+        {
+          "check": "skill_used",
+          "expected": false
+        }
+      ],
+      "answer_checks": false
+    }
+  ]
+}

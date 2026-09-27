@@ -1,0 +1,4 @@
+.DS_Store
+
+# Internal design specs and implementation plans (kept locally, not published)
+docs/superpowers/

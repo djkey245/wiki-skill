@@ -1,0 +1,18 @@
+{
+  "id": "trigger_pl",
+  "title": "The skill triggers on a Polish question",
+  "steps": [
+    {
+      "user": "Czy rośnie zainteresowanie astronomią w polskiej Wikipedii?",
+      "checks": [
+        {
+          "check": "skill_used"
+        },
+        {
+          "check": "answer_language",
+          "lang": "pl"
+        }
+      ]
+    }
+  ]
+}

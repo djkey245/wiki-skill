@@ -1,0 +1,21 @@
+{
+  "id": "english_term_uk_user",
+  "title": "An English term, a Ukrainian user",
+  "steps": [
+    {
+      "user": "Чи зростає інтерес до machine learning у польській і чеській Вікіпедії?",
+      "checks": [
+        {
+          "check": "commands",
+          "expect": [
+            "wikitrends\\.py\\s+quick.*--display-lang\\s+uk"
+          ]
+        },
+        {
+          "check": "answer_language",
+          "lang": "uk"
+        }
+      ]
+    }
+  ]
+}

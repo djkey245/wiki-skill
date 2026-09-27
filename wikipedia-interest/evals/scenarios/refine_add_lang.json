@@ -1,0 +1,24 @@
+{
+  "id": "refine_add_lang",
+  "title": "A refinement: add a language and explain changes",
+  "steps": [
+    {
+      "user": "Як змінюється інтерес до астрономії в польській і чеській Вікіпедії?"
+    },
+    {
+      "user": "Додай ще словацьку. Що змінилося?",
+      "checks": [
+        {
+          "check": "commands",
+          "expect": [
+            "spec\\s+edit\\s+.*--add-lang\\s+sk",
+            "wikitrends\\.py\\s+analyze"
+          ],
+          "forbid": [
+            "wikitrends\\.py\\s+quick"
+          ]
+        }
+      ]
+    }
+  ]
+}

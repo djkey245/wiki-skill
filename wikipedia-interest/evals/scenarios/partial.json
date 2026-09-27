@@ -1,0 +1,21 @@
+{
+  "id": "partial",
+  "title": "partial: true is continued with next_steps",
+  "env": {
+    "WIKITRENDS_REQUEST_CAP": "40"
+  },
+  "steps": [
+    {
+      "user": "Як змінюється інтерес до астрономії в польській, чеській, словацькій, угорській і румунській Вікіпедії?",
+      "checks": [
+        {
+          "check": "commands",
+          "expect": [
+            "wikitrends\\.py\\s+quick",
+            "wikitrends\\.py\\s+analyze"
+          ]
+        }
+      ]
+    }
+  ]
+}

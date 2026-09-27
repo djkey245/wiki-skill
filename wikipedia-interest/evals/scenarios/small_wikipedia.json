@@ -1,0 +1,17 @@
+{
+  "id": "small_wikipedia",
+  "title": "A small Wikipedia",
+  "steps": [
+    {
+      "user": "Як змінюється інтерес до астрономії в ісландській і фарерській Вікіпедії?",
+      "checks": [
+        {
+          "check": "commands",
+          "expect": [
+            "wikitrends\\.py\\s+quick.*--langs\\s+(is,fo|fo,is)"
+          ]
+        }
+      ]
+    }
+  ]
+}
