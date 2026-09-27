@@ -17,7 +17,7 @@ from . import analysis, budget, candidates, fs, months, pageviews, sitematrix, s
 from . import thresholds as T
 from .cache import Cache
 from .deadline import Deadline, DeadlineReached
-from .errors import WikitrendsError, needs_user
+from .errors import WikitrendsError, make_warning, needs_user
 from .http import HttpClient
 
 SCHEMA_VERSION = 1
@@ -151,10 +151,38 @@ def cmd_find(args: argparse.Namespace, ctx: Context) -> Dict[str, Any]:
     return {"query": args.query, "lang": args.lang, "leader": result.leader, "candidates": rows, "next_steps": [template]}
 
 
+def _existing_stop(ctx: Context, path: Path, data: Dict[str, Any], langs: List[str],
+                   period: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """existing_spec: the spec is not changed; next_steps continue it or create a separate one."""
+    edit = ["spec", "edit", str(path)]
+    edit += [x for lang in langs if lang not in data["langs"] for x in ("--add-lang", lang)]
+    edit += [x for lang in data["langs"] if lang not in langs for x in ("--drop-lang", lang)]
+    if period is not None and not spec.same_period(data["period"], period):
+        if period.get("relative"):
+            edit += ["--period", period["relative"]]
+        else:
+            edit += ["--start", period["start"], *(["--end", period["end"]] if period.get("end") else [])]
+    return needs_user(
+        "existing_spec", "A spec for this topic already exists with other languages or another period; "
+        "ask the user whether to continue it or to start a separate one",
+        spec=str(path), langs=data["langs"], period=data["period"],
+        next_steps=[ctx.command(*edit), ctx.command(*ctx.argv, "--new")],
+    )
+
+
 def cmd_suggest(args: argparse.Namespace, ctx: Context) -> Dict[str, Any]:
     display_lang = _display_lang(args.display_lang)
     langs = _langs(args.langs)
     seeds = _seeds(args.seed)
+    if not args.spec and not args.new:  # a repeated request finds its spec (agent contract §2)
+        found = spec.find_existing(ctx.workdir(), seeds)
+        if found is not None:
+            path, data = found
+            if set(data["langs"]) != set(langs):
+                return _existing_stop(ctx, path, data, langs, None)
+            topic = data["topics"][0]
+            return {"spec": str(path), "reused_spec": True, "topic": {"id": topic["id"], "label": topic["label"]},
+                    "next_steps": [ctx.command("analyze", str(path))]}
     budget.check(candidates.estimate_requests(len(seeds), len(langs)), limit=T.MAX_SUGGEST_REQUESTS,
                  allow_large=args.allow_large, command="suggest")
     cache = ctx.open_cache()
@@ -294,6 +322,11 @@ def _analyze(ctx: Context, path: Path, http: HttpClient, cache: Cache, *, allow_
     window, changed = analysis.fix_window(data, latest)
     if changed:
         spec.save(path, data)
+    newer = spec.newer_months(data["period"], latest)
+    if newer:  # the stored window reproduces the previous answer; offer to move it (agent contract §2)
+        ctx.warnings.append(make_warning(
+            "newer_data_available", f"{newer} newer month(s) are published after {data['period']['end']}",
+            months=newer, latest=latest))
     qids = list(dict.fromkeys(q for t in data["topics"] for q in t["items"]))
     entities = wikidata.get_entities(http, reader, qids, languages=[data["display_lang"], *data["langs"]])
     got = analysis.collect(http, reader, data, sites, entities, window, allow_large=allow_large)
@@ -301,7 +334,8 @@ def _analyze(ctx: Context, path: Path, http: HttpClient, cache: Cache, *, allow_
     if got.partial:
         done = len(data["langs"]) - len(got.partial)
         return {"partial": True, "spec": str(path), "progress": {"langs_done": done, "langs_total": len(data["langs"])},
-                "message": "Time limit reached; collected data is cached", "requests": {"network": http.requests_made},
+                "message": "Time limit reached; collected data is cached",
+                "requests": {"network": http.requests_made, "throttled": http.throttled},
                 "next_steps": [command]}
     labels = analysis.entity_labels(entities, data["display_lang"], data["langs"])
     result = analysis.evaluate(data, window, got.data, got.failed, labels, got.revised)
@@ -315,12 +349,15 @@ def _analyze(ctx: Context, path: Path, http: HttpClient, cache: Cache, *, allow_
                    "note": "the previous result was computed on the old data"} for lang, revised in got.revised.items()]
     result.update({
         "spec": str(path), "latest_month": latest, "answer_md_full": templates.answer_md(result, full=True),
-        "changes": found, "warnings": list(ctx.warnings), "requests": {"network": http.requests_made},
+        "changes": found, "warnings": list(ctx.warnings),
+        "requests": {"network": http.requests_made, "throttled": http.throttled},
     })
     result_path = analysis.save_result(path, result)
     return {"spec": str(path), "result": str(result_path), **analysis.compact(result),
             "answer_md": templates.answer_md(result, full=False), "changes": found,
-            "requests": result["requests"], "next_steps": [ctx.report_command(str(path))]}
+            "requests": result["requests"],
+            "next_steps": [ctx.report_command(str(path)),
+                           *([ctx.command("spec", "edit", str(path), "--refresh-window")] if newer else [])]}
 
 
 def cmd_analyze(args: argparse.Namespace, ctx: Context) -> Dict[str, Any]:
@@ -372,6 +409,16 @@ def cmd_quick(args: argparse.Namespace, ctx: Context) -> Dict[str, Any]:
                 return needs_user("ambiguous_topic", "Several topics match the query; ask the user which one is meant",
                                   query=args.query, lang=args.lang, candidates=rows)
             seeds = [found.leader]
+        if not args.new:  # a repeated request finds its spec before any suggest request (agent contract §2)
+            existing = spec.find_existing(ctx.workdir(), seeds)
+            if existing is not None:
+                path, data = existing
+                if set(data["langs"]) != set(langs) or not spec.same_period(data["period"], period):
+                    return _existing_stop(ctx, path, data, langs, period)
+                out = _analyze(ctx, path, http, cache, allow_large=args.allow_large, no_cache=False,
+                               command=ctx.command("analyze", str(path)))
+                out["reused_spec"] = True
+                return out
         budget.check(candidates.estimate_requests(len(seeds), len(langs)), limit=T.MAX_SUGGEST_REQUESTS,
                      allow_large=args.allow_large, command="suggest")
         suggestion = candidates.suggest(http, cache, matrix, seeds, langs, display_lang, T.SUGGEST_LIMIT)
@@ -434,7 +481,7 @@ def build_parser() -> JsonArgumentParser:
     suggest.add_argument("--topic")
     suggest.add_argument("--spec")
     suggest.add_argument("--limit", type=int, default=T.SUGGEST_LIMIT)
-    suggest.add_argument("--new", action="store_true")  # slice 1 always creates a new spec
+    suggest.add_argument("--new", action="store_true")  # never reuse an existing spec
     suggest.add_argument("--allow-large", action="store_true")
     suggest.add_argument("--max-seconds", type=float, default=T.DEFAULT_MAX_SECONDS)
 
@@ -476,7 +523,7 @@ def build_parser() -> JsonArgumentParser:
     quick.add_argument("--period")
     quick.add_argument("--start")
     quick.add_argument("--end")
-    quick.add_argument("--new", action="store_true")  # slice 1 always creates a new spec
+    quick.add_argument("--new", action="store_true")  # never reuse an existing spec
     quick.add_argument("--allow-large", action="store_true")
     quick.add_argument("--max-seconds", type=float, default=T.DEFAULT_MAX_SECONDS)
     return parser

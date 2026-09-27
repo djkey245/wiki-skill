@@ -124,7 +124,8 @@ down ≤ −`FLAT_PCT`, flat between), never the p-value:
 | declining | `weakening` | `no_clear_trend` | | |
 | unclear | | | `no_clear_trend` | `insufficient_data` |
 
-- Size: `monthly_views` at or above the median of the compared items is "high volume";
+- Size: `monthly_views` at or above the median of the compared items is "high volume"
+  (`criteria.size_axis: level_ppm` splits by the share instead: "high share");
   the matrix needs at least `MIN_MATRIX_ITEMS` items, otherwise a table without quadrants.
 - Pairwise tests: the trend method on log(A / B) of the main metric for every pair of languages
   within a topic and of topics within a language, Benjamini–Hochberg within the family. A
@@ -142,9 +143,12 @@ down ≤ −`FLAT_PCT`, flat between), never the p-value:
   items. Above `MAX_DETAILED_CELLS` cells it summarises groups and details only `promising`,
   `emerging`, `weakening` and cells meeting the criteria; high-severity reasons of the other
   cells are grouped by code, never dropped. `result.json` keeps everything.
-- The report (`report.py`) reads only `result.json`: `index` charts (at most
-  `CHART_MAX_SERIES` coloured languages), `report.md` (the untruncated answer) and a one-page
-  PDF with the same text.
+- The report (`report.py`) reads only `result.json`. Charts per topic: `index` over time (at
+  most `CHART_MAX_SERIES` coloured languages, known data breaks marked), growth with its 95 %
+  CI coloured by group, and the size × dynamics matrix (size axis on a log scale, the median
+  line, hollow markers for cells failing the criteria; only with at least `MIN_MATRIX_ITEMS`
+  items). `report.md` is the untruncated answer with every chart; the one-page PDF shows the
+  three charts of the best topic and the same text.
 
 ## Data breaks and revisions
 

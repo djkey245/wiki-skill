@@ -14,7 +14,7 @@ COMMANDS = ("quick", "find", "suggest", "spec edit", "analyze", "ls")
 # codes where the agent must do something other than "follow the hint" (architecture §3 registry)
 SPECIAL = ("ambiguous_topic", "network_blocked", "network_unavailable", "report_deps_missing", "internal_error",
            "workdir_fallback", "partial")
-SLICE_2 = ("existing_spec", "newer_data_available", "--metric", "--refresh-window", "reused_spec")
+SLICE_2 = ("existing_spec", "newer_data_available", "--metric", "--refresh-window", "reused_spec", "size_axis")
 
 
 def frontmatter(text):
@@ -92,8 +92,8 @@ def test_codes_with_their_own_action_are_covered():
     for code in SPECIAL:
         assert code in SKILL, code
         assert code in errors.REGISTRY or code in errors.WARNING_CODES or code == "partial"
-    for later in SLICE_2:  # the slice-1 tree has no slice-2 branches (overview §3)
-        assert later not in SKILL, later
+    for branch in SLICE_2:  # the slice-2 tree has its branches (overview §3)
+        assert branch in SKILL, branch
 
 
 def test_hard_rules_are_there():

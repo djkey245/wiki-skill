@@ -13,11 +13,13 @@ import sys
 import textwrap
 import traceback
 from pathlib import Path
+from statistics import median
 from typing import Any, Dict, List, Optional, Sequence, TextIO, Tuple
 
 import matplotlib
 
 matplotlib.use("Agg")
+import matplotlib.lines  # noqa: E402
 from matplotlib.figure import Figure  # noqa: E402
 
 from . import compare, fs, templates  # noqa: E402
@@ -46,6 +48,18 @@ CHART_TITLE = {"uk": "{topic}: індекс частки (перші 12 міс. 
                "en": "{topic}: share index (first 12 months of the window = 100)"}
 INDEX_NOTE = {"uk": "Графіки: індекс частки теми в розділі, перші 12 міс. вікна = 100.",
               "en": "Charts: the topic's share index in each edition, first 12 months of the window = 100."}
+# Group colours: slots of the same validated palette; the legend names every group shown
+GROUP_COLORS = {"promising": "#1baf7a", "emerging": "#eda100", "steady": "#2a78d6", "weakening": "#e34948",
+                "no_clear_trend": INK_MUTED, "insufficient_data": GRID}
+GROWTH_TITLE = {"uk": "{topic}: ріст, %/рік, і 95% CI", "en": "{topic}: growth, %/yr, and 95% CI"}
+MATRIX_TITLE = {"uk": "{topic}: розмір × динаміка", "en": "{topic}: size × dynamics"}
+AXIS_LABEL = {"uk": {"monthly_views": "перегляди/міс. (лог. шкала)", "level_ppm": "частка, ppm (лог. шкала)"},
+              "en": {"monthly_views": "views/month (log scale)", "level_ppm": "share, ppm (log scale)"}}
+GROWTH_LABEL = {"uk": "ріст, %/рік", "en": "growth, %/yr"}
+BREAK_LABEL = {"uk": "розрив даних", "en": "data break"}
+NOT_MET = {"uk": "○ — не відповідає критеріям", "en": "○ — fails the criteria"}
+CHARTS_FOR = {"uk": "Графіки — для «{topic}»; графіки інших тем — у report.md.",
+              "en": "Charts are for “{topic}”; charts of the other topics are in report.md."}
 OTHERS = {"uk": "інші", "en": "others"}
 CHARTS_HEADING = {"uk": "### Графіки", "en": "### Charts"}
 DATA_LINE = {"uk": "Дані: Wikimedia Pageviews, {start} – {end}; повний текст — report.md, числа — result.json.",
@@ -155,6 +169,11 @@ def draw_index(ax: Any, result: Dict[str, Any], topic: Dict[str, Any], colors: D
         for (name, xe, _), y in zip(ends, _spread([e[2] for e in ends], (high - low) * 0.06)):
             ax.annotate(name, (xe, y), xytext=(4, 0), textcoords="offset points", va="center",
                         fontsize=6 if compact else 8, color=INK_SECONDARY)
+    for month in window_breaks(topic):  # known data breaks inside the window (data §6)
+        at = months.index(month)
+        ax.axvline(at, color=INK_SECONDARY, linewidth=0.7, linestyle=(0, (1, 2)), zorder=1)
+        ax.annotate(BREAK_LABEL[lang], (at, 1), xycoords=("data", "axes fraction"), xytext=(2, -2),
+                    textcoords="offset points", va="top", fontsize=5 if compact else 6.5, color=INK_SECONDARY)
     step = 6 if len(months) > 12 else 3
     ticks = list(range(0, len(months), step))
     ax.set_xticks(ticks)
@@ -171,18 +190,118 @@ def draw_index(ax: Any, result: Dict[str, Any], topic: Dict[str, Any], colors: D
         ax.legend(fontsize=5.5 if compact else 7, frameon=False, ncol=len(shown) + others, loc="upper left")
 
 
-def png_name(topic: Dict[str, Any]) -> str:
-    return f"index-{topic['id']}.png"
+def window_breaks(topic: Dict[str, Any]) -> List[str]:
+    """First months of the known breaks inside the window, from the cells' break checks."""
+    return sorted({b["month"] for c in topic["cells"] for b in c.get("breaks", [])})
+
+
+def _style(ax: Any, compact: bool) -> None:
+    ax.tick_params(labelsize=5.5 if compact else 7)
+    ax.grid(axis="both", color=GRID, linewidth=0.6)
+    ax.set_axisbelow(True)
+    for side in ("top", "right"):
+        ax.spines[side].set_visible(False)
+
+
+def _group_legend(ax: Any, groups: Sequence[str], lang: str, compact: bool, extra: Sequence[Any] = ()) -> None:
+    handles = [matplotlib.lines.Line2D([], [], marker="o", linestyle="", color=GROUP_COLORS[g],
+                                       label=templates.group_name(g, lang)) for g in compare.GROUPS if g in groups]
+    ax.legend(handles=[*handles, *extra], fontsize=5 if compact else 6.5, frameon=False, loc="best")
+
+
+def plotted(topic: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Cells with an estimate, in the ranking order (best first)."""
+    cells = {c["lang"]: c for c in topic["cells"] if c["status"] == "ok" and c.get("growth_ci")}
+    return [cells[k] for k in topic["ranking"] if k in cells]
+
+
+def draw_growth(ax: Any, result: Dict[str, Any], topic: Dict[str, Any], *, compact: bool) -> None:
+    """Growth with its 95% CI per language, colour = group; the ±FLAT_PCT corridor shaded."""
+    lang = result["text_lang"]
+    cells = plotted(topic)
+    ys = list(range(len(cells)))[::-1]
+    ax.axvspan(-T.FLAT_PCT, T.FLAT_PCT, color=GRID, alpha=0.5, linewidth=0, zorder=0)
+    ax.axvline(0, color=INK_MUTED, linewidth=0.8, zorder=1)
+    for y, c in zip(ys, cells):
+        low, high = c["growth_ci"]
+        color = GROUP_COLORS[c["group"]]
+        ax.plot([low, high], [y, y], color=color, linewidth=2.0 if not compact else 1.5, solid_capstyle="butt", zorder=2)
+        ax.plot([c["growth_pct_yr"]], [y], marker="o", markersize=5 if compact else 6, color=color, zorder=3)
+    ax.set_yticks(ys)
+    ax.set_yticklabels([c["lang"] for c in cells])
+    ax.set_ylim(-0.7, len(cells) - 0.3)
+    ax.set_xlabel(GROWTH_LABEL[lang], fontsize=6 if compact else 7)
+    _style(ax, compact)
+    ax.grid(axis="y", visible=False)
+    ax.set_title(GROWTH_TITLE[lang].format(topic=topic["label"]), fontsize=7 if compact else 9, loc="left", color=INK)
+    _group_legend(ax, [c["group"] for c in cells], lang, compact)
+
+
+def draw_matrix(ax: Any, result: Dict[str, Any], topic: Dict[str, Any], *, compact: bool) -> None:
+    """Size (axis of criteria.size_axis, log scale) × growth; the median splits the size;
+    a hollow marker = the cell fails the user's criteria."""
+    lang = result["text_lang"]
+    axis = result.get("size_axis", "monthly_views")
+    cells = [c for c in plotted(topic) if c.get(axis)]
+    xs = [float(c[axis]) for c in cells]
+    middle = median(xs)
+    ax.set_xscale("log")
+    ax.axvline(middle, color=INK_MUTED, linewidth=0.8, linestyle=(0, (3, 3)), zorder=1)
+    ax.axhline(0, color=INK_MUTED, linewidth=0.8, zorder=1)
+    failed = False
+    for x, c in zip(xs, cells):
+        color = GROUP_COLORS[c["group"]]
+        hollow = c.get("criteria_met") is False
+        failed = failed or hollow
+        ax.plot([x], [c["growth_pct_yr"]], marker="o", markersize=6 if compact else 8, zorder=3,
+                color=color, markerfacecolor="white" if hollow else color, markeredgewidth=1.5)
+        ax.annotate(c["lang"], (x, c["growth_pct_yr"]), xytext=(5, 3), textcoords="offset points",
+                    fontsize=6 if compact else 8, color=INK_SECONDARY)
+    ax.set_xlabel(AXIS_LABEL[lang][axis], fontsize=6 if compact else 7)
+    ax.set_ylabel(GROWTH_LABEL[lang], fontsize=6 if compact else 7)
+    _style(ax, compact)
+    ax.set_title(MATRIX_TITLE[lang].format(topic=topic["label"]), fontsize=7 if compact else 9, loc="left", color=INK)
+    extra = [matplotlib.lines.Line2D([], [], marker="o", linestyle="", color=INK_MUTED, markerfacecolor="white",
+                                     label=NOT_MET[lang])] if failed else []
+    _group_legend(ax, [c["group"] for c in cells], lang, compact, extra)
+
+
+def charts(topic: Dict[str, Any]) -> List[str]:
+    """Chart kinds of a topic: index always; growth when a cell has an estimate; the matrix only
+    with at least MIN_MATRIX_ITEMS items (recommendations §3), otherwise the answer's table."""
+    kinds = ["index"]
+    if plotted(topic):
+        kinds.append("growth")
+    if topic.get("matrix") and len(plotted(topic)) >= T.MIN_MATRIX_ITEMS:
+        kinds.append("matrix")
+    return kinds
+
+
+def png_name(topic: Dict[str, Any], kind: str = "index") -> str:
+    return f"{kind}-{topic['id']}.png"
+
+
+def png_names(result: Dict[str, Any]) -> List[Tuple[Dict[str, Any], str, str]]:
+    return [(t, kind, png_name(t, kind)) for t in result["topics"] for kind in charts(t)]
+
+
+def draw(ax: Any, kind: str, result: Dict[str, Any], topic: Dict[str, Any], colors: Dict[str, str], *, compact: bool) -> None:
+    if kind == "index":
+        draw_index(ax, result, topic, colors, compact=compact)
+    elif kind == "growth":
+        draw_growth(ax, result, topic, compact=compact)
+    else:
+        draw_matrix(ax, result, topic, compact=compact)
 
 
 def write_pngs(result: Dict[str, Any], out: Path) -> List[Path]:
     colors = lang_colors(result)
     paths = []
     with matplotlib.rc_context(RC):
-        for topic in result["topics"]:
+        for topic, kind, name in png_names(result):
             fig = Figure(figsize=(7.0, 3.4), dpi=150)
-            draw_index(fig.add_axes((0.07, 0.12, 0.9, 0.78)), result, topic, colors, compact=False)
-            path = out / png_name(topic)
+            draw(fig.add_axes((0.1, 0.14, 0.86, 0.76)), kind, result, topic, colors, compact=False)
+            path = out / name
             _save(fig, path, "png")
             paths.append(path)
     return paths
@@ -199,12 +318,13 @@ def _save(fig: Figure, path: Path, fmt: str) -> None:
 # --- report.md -------------------------------------------------------------------------
 
 
-def report_md(result: Dict[str, Any], pngs: Sequence[str]) -> str:
-    """answer_md without truncation (== answer_md_full without filters) plus links to the charts."""
+def report_md(result: Dict[str, Any], pngs: Sequence[Tuple[str, str]]) -> str:
+    """answer_md without truncation (== answer_md_full without filters) plus links to the charts
+    as (alt text, file name)."""
     text = templates.answer_md(result, full=True)
     if pngs:
         lang = result["text_lang"]
-        links = [f"![{t['label']}]({name})" for t, name in zip(result["topics"], pngs)]
+        links = [f"![{alt}]({name})" for alt, name in pngs]
         text += "\n\n" + "\n".join([CHARTS_HEADING[lang], *links])
     return text + "\n"
 
@@ -314,15 +434,21 @@ def write_pdf(result: Dict[str, Any], path: Path) -> None:
         if len(head) > T.PDF_HEADLINE_LINES:
             head = head[: T.PDF_HEADLINE_LINES - 1] + [(more.format(n=len(head) - T.PDF_HEADLINE_LINES + 1).replace("result.json", "report.md"), False)]
         y = _lines(fig, head, left, 0.97, 8)
-        y = _lines(fig, [(INDEX_NOTE[lang], False)], left, y - 0.004, 6.5, INK_SECONDARY) - 0.012
-        charted = topics[: T.PDF_MAX_CHARTS]
-        gap = 0.04
-        w = (width - gap * (len(charted) - 1)) / len(charted)
-        chart_h = 0.2
-        for i, topic in enumerate(charted):
-            ax = fig.add_axes((left + i * (w + gap), y - chart_h - 0.02, w, chart_h))
-            draw_index(ax, result, topic, colors, compact=True)
-        y -= chart_h + 0.06
+        top = topics[0]  # the charts of the best topic: at most PDF_MAX_CHARTS on the page (report part)
+        note = [(INDEX_NOTE[lang], False)] + ([(CHARTS_FOR[lang].format(topic=top["label"]), False)] if len(topics) > 1 else [])
+        y = _lines(fig, note, left, y - 0.004, 6.5, INK_SECONDARY) - 0.012
+        kinds = charts(top)[: T.PDF_MAX_CHARTS]
+        chart_h, gap = 0.14, 0.07
+        ax = fig.add_axes((left, y - chart_h - 0.02, width, chart_h))
+        draw_index(ax, result, top, colors, compact=True)
+        y -= chart_h + 0.055
+        rest = kinds[1:]
+        if rest:
+            w = (width - gap * (len(rest) - 1)) / len(rest)
+            for i, kind in enumerate(rest):
+                ax = fig.add_axes((left + i * (w + gap), y - chart_h - 0.02, w, chart_h))
+                draw(ax, kind, result, top, colors, compact=True)
+            y -= chart_h + 0.065
         multi = len(result["topics"]) > 1
         criteria = bool(result.get("criteria"))
         rows = sorted(((t, c) for t in result["topics"] for c in t["cells"]), key=lambda tc: cell_priority(*tc))
@@ -330,7 +456,8 @@ def write_pdf(result: Dict[str, Any], path: Path) -> None:
         table_h = T.PDF_TABLE_ROW_HEIGHT * (len(shown) + 1)
         ax = fig.add_axes((left, y - table_h, width, table_h))
         ax.axis("off")
-        table = ax.table(cellText=[templates.table_row(t, c, lang, multi, criteria) for t, c in shown],
+        axis = result.get("size_axis", "monthly_views")
+        table = ax.table(cellText=[templates.table_row(t, c, lang, multi, criteria, axis) for t, c in shown],
                          colLabels=templates.table_header(lang, multi, criteria), cellLoc="left", bbox=(0, 0, 1, 1))
         table.auto_set_font_size(False)
         table.set_fontsize(6)
@@ -375,7 +502,7 @@ def make_report(argv: Sequence[str]) -> Dict[str, Any]:
     out = Path(args.out).resolve() if args.out else spec_dir(path) / REPORT_DIR
     out.mkdir(parents=True, exist_ok=True)
     files: Dict[str, Any] = {}
-    pngs = [png_name(t) for t in result["topics"]] if "png" in formats else []
+    pngs = [(f"{t['label']} ({kind})", name) for t, kind, name in png_names(result)] if "png" in formats else []
     if "png" in formats:
         files["png"] = [str(p) for p in write_pngs(result, out)]
     if "md" in formats:

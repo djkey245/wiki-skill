@@ -36,11 +36,15 @@ The scripts do all the numbers; you choose commands, show the answer and explain
 | An intent no single article covers (learning English, exam preparation) | `find` 2-3 wordings of the intent, choose 1-3 seeds, then `quick "<topic name>" --seed Q.. --seed Q.. --langs … --display-lang …` |
 | Several topics, or the user wants to shape the basket | `find` → `suggest --seed Q.. --langs … --display-lang …` → (`spec edit`) → `analyze <spec>`; add topics with `suggest … --spec <spec>` |
 | Specific dates ("since 2020", "2023 vs 2024") | `--start YYYY-MM [--end YYYY-MM]` in `quick` or `spec edit`, not `--period` |
-| The user states criteria ("from 50k views a month", "growth from 15 %") | `spec edit <spec> --criteria min_monthly_views=50000,min_growth_pct_yr=15`, then `analyze <spec>` |
+| The user states criteria ("from 50k views a month", "growth from 15 %", "the share matters, not the volume") | `spec edit <spec> --criteria min_monthly_views=50000,min_growth_pct_yr=15` (`size_axis=level_ppm` for the share), then `analyze <spec>` |
+| The user wants the trend of raw views, not of the share | `spec edit <spec> --metric views`, then `analyze <spec>`; explain both metrics |
 | A refinement (add a language, change the period or the basket) | `spec edit <spec> …` then `analyze <spec>` on the same file; explain `changes` |
 | A new session refers to earlier work ("that astronomy report") | `ls`, then `spec edit` + `analyze` of the spec found |
 | The user wants a report, PDF or chart | the `uv run … report.py …` command from `next_steps`; add `--out <dir>` if the user can only see files in one directory; give the absolute path of the file |
 | `status: needs_user`, `code: ambiguous_topic` | Show the candidates (labels and descriptions) and ask which one is meant |
+| `status: needs_user`, `code: existing_spec` | The topic was analysed before with other languages or period. If the user refines that work, run the `spec edit` command from `next_steps`; otherwise the command with `--new` |
+| `reused_spec: true` | Say that the earlier analysis was reused (from the cache) |
+| `newer_data_available` in `warnings` | Say that newer months exist and offer to update: the `--refresh-window` command from `next_steps`, then `analyze` |
 | `partial: true` | Run the command in `next_steps` (after `quick` it is `analyze <spec>`); do not give up and do not rerun `quick` |
 | `code: network_blocked` | Ask the user to allow the domains listed in the error; do not retry |
 | `code: network_unavailable` | Say there is no network access; do not ask to allow domains |
@@ -51,12 +55,13 @@ The scripts do all the numbers; you choose commands, show the answer and explain
 Commands:
 
 ```
-quick "<query>" --langs uk,pl,cs --display-lang uk (--lang uk | --seed Q.. [--seed Q..]) [--period 24m | --start YYYY-MM [--end YYYY-MM]]
+quick "<query>" --langs uk,pl,cs --display-lang uk (--lang uk | --seed Q.. [--seed Q..]) [--period 24m | --start YYYY-MM [--end YYYY-MM]] [--new]
 find "<query>" --lang uk
-suggest --seed Q.. [--seed Q..] --langs uk,pl,cs --display-lang uk [--topic "<name>"] [--spec <spec>]
+suggest --seed Q.. [--seed Q..] --langs uk,pl,cs --display-lang uk [--topic "<name>"] [--spec <spec>] [--new]
 spec edit <spec> [--topic <id>] [--add Q..] [--drop Q..] [--add-topic "<name>" --seed Q..] [--drop-topic <id>]
                  [--add-lang xx] [--drop-lang xx] [--period 36m | --start YYYY-MM [--end YYYY-MM]]
-                 [--criteria min_monthly_views=50000,min_growth_pct_yr=15] [--clear-criteria]
+                 [--refresh-window] [--metric share|views]
+                 [--criteria min_monthly_views=50000,min_growth_pct_yr=15,size_axis=level_ppm] [--clear-criteria]
 analyze <spec> [--allow-large] [--max-seconds 90]
 ls
 uv run <skill_dir>/scripts/report.py <spec> [--format pdf,png,md] [--topic <id>] [--lang xx] [--out <dir>]

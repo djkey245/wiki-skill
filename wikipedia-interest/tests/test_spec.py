@@ -150,8 +150,9 @@ def test_langs_period_and_criteria():
     assert data["period"] == {"relative": "36m"}
     spec.set_criteria(data, spec.parse_criteria("min_monthly_views=50000, min_growth_pct_yr=7.5"))
     assert data["options"]["criteria"] == {"min_monthly_views": 50000, "min_growth_pct_yr": 7.5}
+    assert spec.parse_criteria("size_axis=level_ppm") == {"size_axis": "level_ppm"}
     with pytest.raises(WikitrendsError):
-        spec.parse_criteria("size_axis=level_ppm")  # slice 2
+        spec.parse_criteria("size_axis=people")
     with pytest.raises(WikitrendsError):
         spec.parse_criteria("min_monthly_views=lots")
     spec.clear_criteria(data)

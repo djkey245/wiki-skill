@@ -253,7 +253,8 @@ SENTENCES: Dict[str, Dict[str, str]] = {
         "rest": "**Решта:**",
         "none_growing": "У даних немає {what} з виявленим ростом. Наступний крок — інший період, ширший кошик або інші мови.",
         "what_langs": "мови", "what_topics": "теми",
-        "order_rule": "Порядок: спершу квадрант (великий обсяг перед нішею), далі відповідність вашим критеріям, далі темп росту.",
+        "order_rule": "Порядок: спершу квадрант ({big} перед нішею), далі відповідність вашим критеріям, далі темп росту.",
+        "axis_line": "Вісь розміру матриці: частка теми в розділі (ppm), вище або нижче медіани, а не обсяг переглядів.",
         "unconfirmed_because": "ріст не підтверджено: {reason}",
         "criteria_part": "критерії: {statuses}",
         "not_met": "не виконано: {names}",
@@ -289,7 +290,8 @@ SENTENCES: Dict[str, Dict[str, str]] = {
         "rest": "**The rest:**",
         "none_growing": "No {what} in the data shows detected growth. Next step: another period, a wider basket or other languages.",
         "what_langs": "language", "what_topics": "topic",
-        "order_rule": "Order: quadrant first (high volume before niche), then your criteria, then the growth rate.",
+        "order_rule": "Order: quadrant first ({big} before niche), then your criteria, then the growth rate.",
+        "axis_line": "Size axis of the matrix: the topic's share of the edition (ppm), above or below the median, not the volume of views.",
         "unconfirmed_because": "growth not confirmed: {reason}",
         "criteria_part": "criteria: {statuses}",
         "not_met": "not met: {names}",
@@ -363,7 +365,7 @@ def _criteria_part(cell: Dict[str, Any], criteria: Dict[str, Any], lang: str, me
 
 def recommendation_texts(
     rec: Dict[str, List[str]], cells: Dict[str, Dict[str, Any]], names: Dict[str, str], criteria: Dict[str, Any],
-    lang: str, what: str, metric: str = "share",
+    lang: str, what: str, metric: str = "share", axis: str = "monthly_views",
 ) -> Dict[str, Any]:
     """The block of recommendations §5 from the ordered keys: explore / postpone as [{key, text}],
     rest as {keys, text}, and `none` when nothing shows detected growth."""
@@ -371,7 +373,7 @@ def recommendation_texts(
     explore = []
     for key in rec["explore"]:
         cell = cells[key]
-        label = quadrant_name(cell["quadrant"], lang) if cell.get("quadrant") else group_name(cell["group"], lang)
+        label = quadrant_name(cell["quadrant"], lang, axis) if cell.get("quadrant") else group_name(cell["group"], lang)
         parts = [f"{cell['fmt']['growth']} {cell['fmt']['ci']}"]
         if cell["group"] == "emerging":
             parts.append(s["unconfirmed_because"].format(reason=(_main_reason(cell) or "").rstrip(".").lower()
@@ -419,7 +421,8 @@ def table_header(lang: str, multi_topic: bool, with_criteria: bool) -> List[str]
     return head if with_criteria else head[:-1]
 
 
-def table_row(topic: Dict[str, Any], cell: Dict[str, Any], lang: str, multi_topic: bool, with_criteria: bool) -> List[str]:
+def table_row(topic: Dict[str, Any], cell: Dict[str, Any], lang: str, multi_topic: bool, with_criteria: bool,
+              axis: str = "monthly_views") -> List[str]:
     """One row of the answer table as cells (answer_md and the PDF table)."""
     w = WORDS[lang]
     if cell["status"] != "ok":
@@ -428,9 +431,9 @@ def table_row(topic: Dict[str, Any], cell: Dict[str, Any], lang: str, multi_topi
     else:
         group = group_name(cell["group"], lang)
         if cell.get("quadrant") in ("big_growing", "growing_niche", "big_stable", "small_stable"):
-            group += f" ({quadrant_name(cell['quadrant'], lang)})"
+            group += f" ({quadrant_name(cell['quadrant'], lang, axis)})"
         elif cell.get("size_big") is not None:  # groups without a size split still show the size
-            group += f" ({size_name(cell['size_big'], lang)})"
+            group += f" ({size_name(cell['size_big'], lang, axis)})"
         f = cell["fmt"]
         values = [f.get("growth") or "", f.get("ci") or "", f.get("level_ppm") or "", f.get("monthly_views") or "",
                   w["confidence"][cell["confidence"]]]
@@ -440,10 +443,11 @@ def table_row(topic: Dict[str, Any], cell: Dict[str, Any], lang: str, multi_topi
     return cols
 
 
-def _table(rows: List[Tuple[Dict[str, Any], Dict[str, Any]]], lang: str, multi_topic: bool, with_criteria: bool) -> List[str]:
+def _table(rows: List[Tuple[Dict[str, Any], Dict[str, Any]]], lang: str, multi_topic: bool, with_criteria: bool,
+           axis: str) -> List[str]:
     head = table_header(lang, multi_topic, with_criteria)
     lines = ["| " + " | ".join(head) + " |", "|" + "---|" * len(head)]
-    lines += ["| " + " | ".join(table_row(t, c, lang, multi_topic, with_criteria)) + " |" for t, c in rows]
+    lines += ["| " + " | ".join(table_row(t, c, lang, multi_topic, with_criteria, axis)) + " |" for t, c in rows]
     return lines
 
 
@@ -478,6 +482,7 @@ def answer_sections(result: Dict[str, Any], *, full: bool) -> List[Tuple[str, Li
     multi_topic = len(topics) > 1
     criteria = result.get("criteria") or {}
     metric = result.get("metric", "share")
+    axis = result.get("size_axis", "monthly_views")
     all_cells = [(t, c) for t in topics for c in t["cells"]]
     many = not full and len(all_cells) > T.MAX_DETAILED_CELLS
     shown = [(t, c) for t, c in all_cells if not many or is_key_cell(c)]
@@ -490,7 +495,7 @@ def answer_sections(result: Dict[str, Any], *, full: bool) -> List[Tuple[str, Li
             counts[c["group"]] = counts.get(c["group"], 0) + 1
         items = "; ".join(f"{group_name(g, lang)} — {n}" for g, n in counts.items())
         sections.append(("summary", [s["summary"].format(items=items)]))
-    table = _table(shown, lang, multi_topic, bool(criteria))
+    table = _table(shown, lang, multi_topic, bool(criteria), axis)
     if len(shown) < len(all_cells):
         table.append(_more(len(all_cells) - len(shown), lang))
     sections.append(("table", table))
@@ -547,7 +552,7 @@ def answer_sections(result: Dict[str, Any], *, full: bool) -> List[Tuple[str, Li
                 if len(rec_blocks) > 1:
                     lines.append(f"*{title}*")
                 lines += _recommendation_lines(texts, lang)
-        lines.append(s["order_rule"])
+        lines.append(s["order_rule"].format(big=WORDS[lang]["size"][axis][0]))
         sections.append(("recommendations", lines))
 
     lines = [s["h_assumptions"]]
@@ -561,6 +566,8 @@ def answer_sections(result: Dict[str, Any], *, full: bool) -> List[Tuple[str, Li
             items = _limited(items, None if full else T.MAX_EXCLUDED_SHOWN, lang)
             lines.append("- " + s["excluded"].format(items=", ".join(items)))
     lines.append("- " + s["basket_note"])
+    if axis == "level_ppm":
+        lines.append("- " + s["axis_line"])
     period = result["period"]
     lines.append("- " + s["metric_line_views" if metric == "views" else "metric_line"].format(start=period["start"], end=period["end"]))
     if criteria:

@@ -31,6 +31,8 @@
         "ok": {"const": true},
         "status": {"const": "needs_user"},
         "code": {"enum": ["ambiguous_topic", "existing_spec"]},
+        "spec": {"type": "string"},
+        "next_steps": {"type": "array", "items": {"type": "string"}},
         "candidates": {"type": "array", "items": {
           "type": "object", "required": ["qid", "label"],
           "properties": {"qid": {"$ref": "#/$defs/qid"}, "label": {"type": "string"}, "description": {"type": ["string", "null"]}}
@@ -165,7 +167,7 @@
       "description": "results/<timestamp>.json and its copy result.json",
       "type": "object",
       "required": ["spec", "result", "display_lang", "text_lang", "period", "metric", "criteria", "langs", "topics", "by_lang",
-                   "latest_month", "answer_md_full", "changes", "warnings", "requests"],
+                   "latest_month", "answer_md_full", "changes", "warnings", "requests", "size_axis"],
       "properties": {
         "spec": {"type": "string"}, "result": {"type": "string"},
         "display_lang": {"type": "string"}, "text_lang": {"enum": ["uk", "en"]},
@@ -174,6 +176,7 @@
           "months": {"type": "array", "items": {"$ref": "#/$defs/month"}}}},
         "latest_month": {"$ref": "#/$defs/month"},
         "metric": {"enum": ["share", "views"]},
+        "size_axis": {"enum": ["monthly_views", "level_ppm"]},
         "criteria": {"type": ["object", "null"]},
         "langs": {"type": "array", "items": {"type": "object", "required": ["lang", "status"]}},
         "topics": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/topic"}},
@@ -218,6 +221,7 @@
         "answer_md": {"type": "string", "minLength": 1},
         "changes": {"type": "array", "items": {"$ref": "#/$defs/change"}},
         "basket": {"type": "array", "items": {"$ref": "#/$defs/labelled"}},
+        "reused_spec": {"const": true},
         "next_steps": {"type": "array", "items": {"type": "string"}}
       }
     }

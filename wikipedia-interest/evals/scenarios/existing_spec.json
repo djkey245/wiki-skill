@@ -1,0 +1,21 @@
+{
+  "id": "existing_spec",
+  "title": "A repeated request with another language set continues the earlier spec",
+  "steps": [
+    {
+      "user": "Як змінюється інтерес до астрономії в польській і чеській Вікіпедії?"
+    },
+    {
+      "user": "А тепер астрономія в польській, чеській і словацькій Вікіпедії — як там?",
+      "checks": [
+        {
+          "check": "commands",
+          "expect": [
+            "(spec\\s+edit\\s+.*--add-lang\\s+sk|--new)",
+            "wikitrends\\.py\\s+analyze"
+          ]
+        }
+      ]
+    }
+  ]
+}

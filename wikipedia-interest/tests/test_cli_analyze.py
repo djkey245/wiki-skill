@@ -158,7 +158,7 @@ def test_quick_find_leader_and_argument_errors(tmp_path):
     code, out, _ = run_cli(["quick", "астрономія", "--lang", "uk", "--langs", "uk"], tmp_path, astronomy())
     assert code == 2 and out["code"] == "display_lang_required"
     code, out, _ = run_cli(["quick", "астрономія", "--seed", "Q1", "--langs", "uk,pl", "--display-lang", "uk",
-                            "--start", "2025-01", "--end", "2026-12"], tmp_path, astronomy())
+                            "--start", "2025-01", "--end", "2026-12", "--new"], tmp_path, astronomy())
     assert code == 2 and out["code"] == "end_not_available" and out["latest"] == "2026-08"
 
 

@@ -1,0 +1,24 @@
+{
+  "id": "metric_views",
+  "title": "The share and raw views differ; the user wants raw views",
+  "steps": [
+    {
+      "user": "Як змінюється інтерес до астрономії в польській і чеській Вікіпедії?"
+    },
+    {
+      "user": "Мене цікавлять абсолютні перегляди, а не частка. Перерахуй.",
+      "checks": [
+        {
+          "check": "commands",
+          "expect": [
+            "spec\\s+edit\\s+.*--metric\\s+views",
+            "wikitrends\\.py\\s+analyze"
+          ],
+          "forbid": [
+            "wikitrends\\.py\\s+quick"
+          ]
+        }
+      ]
+    }
+  ]
+}

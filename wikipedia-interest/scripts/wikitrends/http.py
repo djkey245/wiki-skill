@@ -142,6 +142,7 @@ class HttpClient:
         self.parallelism = parallelism
         self.timeout = timeout
         self.requests_made = 0
+        self.throttled = 0  # 429 answers (calibration R12)
         self._count_lock = threading.Lock()
         self.rate_per_minute = rate_per_minute
         self.clock = clock
@@ -203,6 +204,9 @@ class HttpClient:
                 attempt += 1
                 continue
             if response.status == 429 or response.status >= 500:
+                if response.status == 429:
+                    with self._count_lock:
+                        self.throttled += 1
                 if attempt >= self.max_retries:
                     raise _network_error(url, f"HTTP {response.status}")
                 self.sleep(_retry_delay(response, attempt))

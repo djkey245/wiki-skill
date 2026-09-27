@@ -22,7 +22,6 @@ VERSION = 1
 METRICS = ("share", "views")
 SIZE_AXES = ("monthly_views", "level_ppm")
 CRITERIA_FIELDS = ("min_monthly_views", "min_growth_pct_yr", "size_axis")
-SLICE1_CRITERIA = ("min_monthly_views", "min_growth_pct_yr")  # size_axis: slice 2
 _QID = re.compile(r"^Q[1-9][0-9]*$")
 _RELATIVE = re.compile(r"^([1-9][0-9]*)m$")
 
@@ -202,7 +201,7 @@ def check_criteria(criteria: Any) -> None:
         raise _invalid("options.criteria: expected an object")
     for key, value in criteria.items():
         if key not in CRITERIA_FIELDS:
-            raise _invalid(f"unknown criterion {key!r}", hint="Use min_monthly_views, min_growth_pct_yr")
+            raise _invalid(f"unknown criterion {key!r}", hint="Use min_monthly_views, min_growth_pct_yr, size_axis")
         if key == "size_axis":
             if value not in SIZE_AXES:
                 raise _invalid(f"size_axis: expected one of {', '.join(SIZE_AXES)}")
@@ -341,15 +340,18 @@ def set_metric(spec: Dict[str, Any], metric: str) -> None:
     spec["options"]["metric"] = metric
 
 
-def parse_criteria(text: str, *, slice1: bool = True) -> Dict[str, Any]:
-    """'min_monthly_views=50000,min_growth_pct_yr=15' -> dict (size_axis arrives in slice 2)."""
-    allowed = SLICE1_CRITERIA if slice1 else CRITERIA_FIELDS
+def parse_criteria(text: str) -> Dict[str, Any]:
+    """'min_monthly_views=50000,min_growth_pct_yr=15,size_axis=level_ppm' -> dict."""
     out: Dict[str, Any] = {}
     for part in filter(None, (p.strip() for p in text.split(","))):
         key, sep, value = part.partition("=")
         key = key.strip()
-        if not sep or key not in allowed:
-            raise _invalid(f"invalid criterion {part!r}", hint="Use " + ", ".join(f"{k}=<number>" for k in allowed))
+        if not sep or key not in CRITERIA_FIELDS:
+            raise _invalid(f"invalid criterion {part!r}",
+                           hint="Use min_monthly_views=<number>, min_growth_pct_yr=<number>, size_axis=monthly_views|level_ppm")
+        if key == "size_axis":
+            out[key] = value.strip()
+            continue
         try:
             out[key] = float(value) if "." in value else int(value)
         except ValueError:
@@ -400,6 +402,47 @@ def list_specs(directory: Path) -> List[Dict[str, Any]]:
         item["last_analysis"] = _mtime(result) if result.exists() else None
         out.append(item)
     return out
+
+
+# --- repeated requests (agent contract §2, slice 2) --------------------------------------
+
+
+def same_period(existing: Dict[str, Any], requested: Optional[Dict[str, Any]]) -> bool:
+    """A request without a period means the default relative period."""
+    requested = requested or {"relative": f"{T.DEFAULT_PERIOD_MONTHS}m"}
+    if requested.get("relative"):
+        return existing.get("relative") == requested["relative"]
+    if existing.get("relative"):
+        return False
+    return existing.get("start") == requested.get("start") and (
+        not requested.get("end") or existing.get("end") == requested["end"])
+
+
+def find_existing(workdir: Path, seeds: Sequence[str]) -> Optional[Tuple[Path, Dict[str, Any]]]:
+    """The newest spec with ONE topic and the same set of seeds; specs with several topics never
+    match (it is unclear that the user wants to continue that comparison)."""
+    found = []
+    root = Path(workdir)
+    if not root.exists():
+        return None
+    for path in root.glob(f"*/{SPEC_FILE}"):
+        try:
+            data = load(path)
+        except WikitrendsError:
+            continue
+        if len(data["topics"]) == 1 and set(data["topics"][0]["seeds"]) == set(seeds):
+            found.append((path.stat().st_mtime, str(path), data))
+    if not found:
+        return None
+    _, path, data = max(found)
+    return Path(path).resolve(), data
+
+
+def newer_months(period: Dict[str, Any], latest: str) -> int:
+    """Months published after the fixed end of a relative spec; 0 for explicit dates (the user chose them)."""
+    if not period.get("relative") or not period.get("end"):
+        return 0
+    return max(months.diff(latest, period["end"]), 0)
 
 
 def _mtime(path: Path) -> str:

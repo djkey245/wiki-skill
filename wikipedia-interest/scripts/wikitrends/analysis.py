@@ -93,10 +93,10 @@ def _pairs(series: Dict[str, List[Optional[float]]], cells: Dict[str, Dict[str, 
 
 def _family(cells: Dict[str, Dict[str, Any]], series: Dict[str, List[Optional[float]]], names: Dict[str, str],
             criteria: Dict[str, Any], first_month: str, window_start: int, lang: str, what: str,
-            compare_pairs: bool = True, metric: str = "share") -> Dict[str, Any]:
+            compare_pairs: bool = True, metric: str = "share", axis: str = "monthly_views") -> Dict[str, Any]:
     """Matrix, recommendations and pairs of one family: a topic's languages or a language's topics."""
     ok = {k: c for k, c in cells.items() if c["status"] == "ok"}
-    flags = compare.size_flags({k: float(c["monthly_views"]) for k, c in ok.items()})
+    flags = compare.size_flags({k: (None if c[axis] is None else float(c[axis])) for k, c in ok.items()})
     quadrants = {k: compare.quadrant(c["group"], flags[k]) for k, c in ok.items()}
     items = [compare.Item(k, c["group"], quadrants[k], c["criteria"], c["growth_pct_yr"]) for k, c in ok.items()]
     items += [compare.Item(k, c["group"], None, {}, None) for k, c in cells.items() if k not in ok]
@@ -108,7 +108,7 @@ def _family(cells: Dict[str, Dict[str, Any]], series: Dict[str, List[Optional[fl
         "ranking": ranking,
         "pairs": _pairs({k: series[k] for k in ranking if k in series}, cells, names, [k for k in ranking if k in series],
                         first_month, window_start, lang, metric) if compare_pairs and len(series) > 1 else [],
-        "recommendations": (templates.recommendation_texts(keys, cells, names, criteria, lang, what, metric)
+        "recommendations": (templates.recommendation_texts(keys, cells, names, criteria, lang, what, metric, axis)
                             if len(cells) > 1 else None),
     }
 
@@ -125,7 +125,7 @@ def evaluate(
     metric = spec_data["options"].get("metric", "share")
     revised = revised or {}
     criteria = dict(spec_data["options"].get("criteria") or {})
-    criteria.pop("size_axis", None)  # slice 2
+    axis = criteria.pop("size_axis", "monthly_views")  # the size axis of the matrix, not a criterion
     start, end = window
     langs = spec_data["langs"]
     ok_langs = [l for l in langs if l in data]
@@ -152,7 +152,7 @@ def evaluate(
             by_lang_cells[l][topic["id"]] = cells[l]
         common = next(iter(baskets.values())).common if baskets else []
         family = _family(cells, series, {l: l for l in langs}, criteria, first_month, window_start, lang, "langs",
-                         compare_pairs=bool(common), metric=metric)
+                         compare_pairs=bool(common), metric=metric, axis=axis)
         for l, c in cells.items():
             c["size_big"] = family["size_big"].get(l)
             c["quadrant"] = family["quadrants"].get(l)
@@ -182,7 +182,7 @@ def evaluate(
         names = {t["id"]: f"«{t['label']}»" if lang == "uk" else f"“{t['label']}”" for t in spec_data["topics"]}
         for l in ok_langs:
             family = _family(by_lang_cells[l], by_lang_series[l], names, criteria, first_month, window_start, lang, "topics",
-                             metric=metric)
+                             metric=metric, axis=axis)
             by_lang.append({"lang": l, "ranking": family["ranking"], "matrix": family["matrix"],
                             "quadrants": family["quadrants"], "pairs": family["pairs"],
                             "recommendations": family["recommendations"]})
@@ -190,7 +190,7 @@ def evaluate(
         "display_lang": spec_data["display_lang"], "text_lang": lang,
         "period": {"start": start, "end": end, "months": months.span(start, end),
                    **({"relative": spec_data["period"]["relative"]} if spec_data["period"].get("relative") else {})},
-        "metric": metric, "criteria": criteria or None,
+        "metric": metric, "criteria": criteria or None, "size_axis": axis,
         "langs": [{"lang": l, "status": "ok" if l in data else "failed", **({"error": failed[l]} if l in failed else {})}
                   for l in langs],
         "topics": topics, "by_lang": by_lang,

@@ -41,10 +41,11 @@ def test_report_files_and_text(tmp_path):
     code, out = report([str(path)])
     assert code == 0 and out["ok"] and out["out"] == str(path.parent / "report")
     files = out["files"]
-    assert [Path(p).name for p in files["png"]] == ["index-astronomy.png"]
+    assert [Path(p).name for p in files["png"]] == ["index-astronomy.png", "growth-astronomy.png", "matrix-astronomy.png"]
     result = json.loads((path.parent / "result.json").read_text())
     md = Path(files["md"]).read_text()
-    assert md.startswith(result["answer_md_full"] + "\n\n### Графіки\n![астрономія](index-astronomy.png)")
+    assert md.startswith(result["answer_md_full"] + "\n\n### Графіки\n![астрономія (index)](index-astronomy.png)\n"
+                                                    "![астрономія (growth)](growth-astronomy.png)")
     pdf = Path(files["pdf"]).read_bytes()
     assert pdf.startswith(b"%PDF") and render.pages(pdf) == 1
     assert Path(files["png"][0]).read_bytes().startswith(b"\x89PNG")
@@ -60,7 +61,7 @@ def test_same_result_same_bytes(tmp_path):
     data = json.loads(result.read_text())
     result.write_text(json.dumps(data, sort_keys=True))  # another key order
     report([str(path), "--out", str(tmp_path / "b")])
-    for name in ("report.pdf", "report.md", "index-astronomy.png"):
+    for name in ("report.pdf", "report.md", "index-astronomy.png", "growth-astronomy.png", "matrix-astronomy.png"):
         assert (tmp_path / "a" / name).read_bytes() == (tmp_path / "b" / name).read_bytes(), name
     assert b"CreationDate" not in (tmp_path / "a" / "report.pdf").read_bytes()
 
